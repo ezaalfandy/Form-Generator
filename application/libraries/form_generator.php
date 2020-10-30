@@ -138,20 +138,23 @@
             foreach ($this->form_config as $key => $value) {
                 if(strpos($value['atribut']['name'], 'id_'.$this->table) === FALSE){
                     $label = form_label(ucwords(str_replace('_', ' ', $this->create_label_from_name($value['atribut']['name']))), $value['atribut']['id']);
-                    if($value['atribut']['type'] == 'text' || $value['atribut']['type'] == 'number'){
+                    if($value['atribut']['type'] == 'text' || 
+                       $value['atribut']['type'] == 'number' ||  
+                       $value['atribut']['type'] == 'date'){
                         $input = form_input($value['atribut']);
-                    }elseif ($value['atribut']['type'] == 'textarea') {
-                        $input = form_textarea($value['atribut']);
+                    }elseif ($value['atribut']['type'] == 'text') {
+                        $input = form_input($value['atribut']);
                     }elseif ($value['atribut']['type'] == 'radio') {
             
                     }elseif ($value['atribut']['type'] == 'checkbox') {
             
                     }elseif($value['atribut']['type'] == 'dropdown'){
-                        $input = form_dropdown($value['atribut']['name'], $value['options']['dropdown_options'], array_key_first($value['options']['dropdown_options']), $value['atribut']);
+                        $options = $value['data']['options']; 
+                        $input = form_dropdown($value['atribut']['name'], $options, null, $value['atribut']);
                     }elseif($value['atribut']['type'] == 'hidden'){
                         $input = form_hidden($value['atribut']);
                     }
-                    $input .= '                    <small class="text-danger"><?php echo form_error(\''.$value['atribut']['name'].'\'); ?></small>';
+                    $input .= '                    <small class="text-danger"><?= form_error(\''.$value['atribut']['name'].'\'); ?></small>';
                     $modal .= $this->create_stacked_input($input, $label);
                 }else{
                     $modal .= form_hidden($value['atribut']['name'], $value['atribut']['value']);
@@ -200,20 +203,23 @@
             foreach ($this->form_config as $key => $value) {
                 if(strpos($value['atribut']['name'], 'id_'.$this->table) === FALSE){
                     $label = form_label($this->create_label_from_name($value['atribut']['name']), $value['atribut']['id']);
-                    if($value['atribut']['type'] == 'text' || $value['atribut']['type'] == 'number'){
+                    if($value['atribut']['type'] == 'text' || 
+                       $value['atribut']['type'] == 'number' ||  
+                       $value['atribut']['type'] == 'date'){
                         $input = form_input($value['atribut']);
-                    }elseif ($value['atribut']['type'] == 'textarea') {
-                        $input = form_textarea($value['atribut']);
+                    }elseif ($value['atribut']['type'] == 'text') {
+                        $input = form_input($value['atribut']);
                     }elseif ($value['atribut']['type'] == 'radio') {
             
                     }elseif ($value['atribut']['type'] == 'checkbox') {
             
                     }elseif($value['atribut']['type'] == 'dropdown'){
-                        $input = form_dropdown($value['atribut']['name'], $value['options']['dropdown_options'], array_key_first($value['options']['dropdown_options']), $value['atribut']);
+                        $options = $value['data']['options']; 
+                        $input = form_dropdown($value['atribut']['name'], $options, null, $value['atribut']);
                     }elseif($value['atribut']['type'] == 'hidden'){
                         $input = form_hidden($value['atribut']);
                     }
-                    $input .= '                    <small class="text-danger"><?php echo form_error(\''.$value['atribut']['name'].'\'); ?></small>';
+                    $input .= '                    <small class="text-danger"><?= form_error(\''.$value['atribut']['name'].'\'); ?></small>';
                     $this->form .= $this->create_stacked_input($input, $label);
                 }
             }
@@ -268,7 +274,7 @@
                     'name'          => $prefix.'_'.$value->name,
                     'id'            => $prefix.'_'.$this->table.'_'.$value->name,
                     'class'         => 'form-control',
-                    'value'         => '<?php echo set_value(\''.$prefix.'_'.$value->name.'\'); ?>',
+                    'value'         => '<?= (!empty($data_'.$this->table.'->'.$value->name.'))? $data_'.$this->table.'->'.$value->name.' : set_value(\''.$prefix.'_'.$value->name.'\'); ?>',
                     'required'      => "true"
                 );
 
@@ -283,12 +289,16 @@
                         $atribut['min'] = '0';
                         $atribut['type'] = 'number';
                     }elseif ($value->type == 'text') {
-                        $atribut['type'] = 'textarea';
+                        $atribut['type'] = 'text';
                     }elseif ($value->type == 'boolean') {
     
+                    }elseif ($value->type == 'date') {
+                        $atribut['type'] = 'text';
+                        $atribut['class'] = 'form-control datepicker';
                     }elseif($value->type == 'enum'){
                         $atribut['type'] = 'dropdown';
-                        $options['dropdown_options'] = $this->get_possible_enum($this->table, $value->name);
+                        $data['options'] = $this->get_possible_enum($this->table, $value->name);
+                        $this->form_config[$value->name]["data"] =  $data;
                     }else{
                         //untuk jenis kolom lain seperti timestamp
                         continue;
@@ -298,10 +308,7 @@
                     $atribut['type'] = 'number';
                 }
                 
-                $this->form_config[$value->name] =  [
-                    "atribut" => $atribut
-                    // "options" => $options
-                ];
+                $this->form_config[$value->name]["atribut"] =  $atribut;
             }
         }
 
@@ -395,7 +402,7 @@
             $controller .= '
                     
                     $this->form_validation->set_rules($config);
-                    if($this->form_validation->run() == TRUE) 
+                    if($this->form_validation->run($this) == TRUE) 
                     {';
 
             $controller .= $this->generate_array_model();
@@ -414,14 +421,14 @@
                                 );
                             }
                             $this->session->set_flashdata($array);
-                            redirect(\''.$this->controller.'/view-'.$this->to_hypens($this->table).'\');
+                            redirect(\''.$this->controller.'/'.$this->to_hypens($this->table).'\');
                     }else{
-                        $this->view_'.$this->table.'();
+                        $this->'.$this->table.'();
                     }
                     
                 }else
                 {
-                    redirect(\'Account\');
+                    redirect(\'account\');
                 }
             }
             ';
@@ -430,27 +437,38 @@
 
         public function generate_delete_controller($form_validation = true, $array_model = true){
             $controller = '
-            public function delete_'.$this->table.'()
+            public function delete_'.$this->table.'($'.$this->primary_key.')
             {
                 if($this->session->userdata(\''.$this->session_key.'\') == \''.$this->session_value.'\')
                 {
-                    if($this->Base_model->delete(\''.$this->table.'\',  array(\''.$this->primary_key.'\'=> $this->uri->segment(3)) ) == true)
+                    if($'.$this->primary_key.' !== NULL)
                     {
-                        $array = array(
-                            \'status\' => \'success\',
-                            \'message\' => \'Berhasil Hapus Data\'
-                        );
-                    }else{
+                        $delete = $this->Base_model->delete(\''.$this->table.'\',  array(\''.$this->primary_key.'\'=> $'.$this->primary_key.') );
+                        if($delete == true)
+                        {
+                            $array = array(
+                                \'status\' => \'success\',
+                                \'message\' => \'Berhasil Hapus Data\'
+                            );
+                        }else{
+                            $array = array(
+                                \'status\' => \'failed\',
+                                \'message\' => $delete[\'message\']
+                            );
+                        }
+                    }else
+                    {
                         $array = array(
                             \'status\' => \'failed\',
                             \'message\' => \'Gagal Hapus Data\'
                         );
                     }
+
                     $this->session->set_flashdata($array);
-                    redirect(\''.$this->controller.'/view-'.$this->table.'\');
+                    redirect(\''.$this->controller.'/'.$this->table.'\');
                 }else
                 {
-                    redirect(\'Account\');
+                    redirect(\'account\');
                 }
             }
             ';
@@ -473,7 +491,7 @@
             $controller .= '
                     
                     $this->form_validation->set_rules($config);
-                    if($this->form_validation->run() == TRUE) 
+                    if($this->form_validation->run($this) == TRUE) 
                     {';
 
             $controller .= $this->generate_array_model();
@@ -493,14 +511,14 @@
                                 );
                             }
                             $this->session->set_flashdata($array);
-                            redirect(\''.$this->controller.'/view-'.$this->to_hypens($this->table).'\');
+                            redirect(\''.$this->controller.'/'.$this->to_hypens($this->table).'\');
                     }else{
-                        $this->view_'.$this->table.'();
+                        $this->'.$this->table.'();
                     }
                     
                 }else
                 {
-                    redirect(\'Account\');
+                    redirect(\'account\');
                 }
             }
             ';
@@ -517,7 +535,26 @@
                     echo json_encode($result);
                 }else
                 {
-                    redirect(\'Account\');
+                    redirect(\'account\');
+                }
+            }
+            ';
+            return $controller;
+        }
+
+        public function generate_view_controller($array_model = true){
+            $controller = '
+            public function '.$this->table.'()
+            {
+                if($this->session->userdata(\''.$this->session_key.'\') == \''.$this->session_value.'\')
+                {   
+                    $data[\'data_'.$this->table.'\'] = \'\';
+                    $data[\'main_view\'] = \''.$this->table.'\';
+
+                    $this->load->view(\'template\', $data);
+                }else
+                {
+                    redirect(\'account\');
                 }
             }
             ';

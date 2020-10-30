@@ -43,6 +43,7 @@ class Home extends CI_Controller {
         $data['delete_controller'] = $this->form_generator->generate_delete_controller();
         $data['edit_controller'] = $this->form_generator->generate_edit_controller();
         $data['get_specific_controller'] = $this->form_generator->generate_get_specific_controller();
+        $data['view_controller'] = $this->form_generator->generate_view_controller();
         
         $data['model'] = $this->form_generator->generate_array_model();
         $data['table'] = $this->form_generator->generate_table();

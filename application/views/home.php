@@ -215,6 +215,7 @@
                 <div class="tab-content tab-space">
                   <div class="tab-pane active" id="controller">
                     <textarea  id="controllerCode" cols="100" rows="10">
+                      <?= $view_controller?>
                       <?= $insert_controller?>
                       <?= $delete_controller?>
                       <?= $edit_controller?>
