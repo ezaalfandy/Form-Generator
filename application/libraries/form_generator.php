@@ -230,6 +230,57 @@
             return $this->form;
         }
 
+        public function generate_laravel_form(array $new_form_config = array(), $form_type = 'stacked', $link = null){
+
+            $this->set_laravel_form_config('insert');
+            if($new_form_config == NULL){
+                //APABILA USER TIDAK MENSPESIFIKKAN FORM CONFIG MAKA AKAN MENGGUNAKAN CONFIG DEFAULT
+                if($this->form_config == null){
+                    //MELAKUKAN SET DEFAULT form_config
+                    $this->set_laravel_form_config();
+                }
+            }else{
+                $this->form_config = $new_form_config;
+            }
+
+            $form_atribut = array(
+                "novalidate" => "novalidate", 
+                "id" => 'formInsert'.$this->to_camel_case($this->table),
+                "action" => $this->controller."@store"
+            );
+            
+            $this->form = NULL;
+            $this->form .= '{{ Form::open(array("novalidate" => "novalidate", "id" => "formInsert'.$this->to_camel_case($this->table).'", "action" => "'.$this->controller.'Controller@store")) }}';
+            
+            foreach ($this->form_config as $key => $value) {
+                if(strpos($value['atribut']['name'], 'id_'.$this->table) === FALSE){
+                    $label = form_label($this->create_label_from_name($value['atribut']['name']), $value['atribut']['id']);
+                    if($value['atribut']['type'] == 'text' || 
+                       $value['atribut']['type'] == 'number' ||  
+                       $value['atribut']['type'] == 'date'){
+                        $input = form_input($value['atribut']);
+                    }elseif ($value['atribut']['type'] == 'text') {
+                        $input = form_input($value['atribut']);
+                    }elseif ($value['atribut']['type'] == 'radio') {
+            
+                    }elseif ($value['atribut']['type'] == 'checkbox') {
+            
+                    }elseif($value['atribut']['type'] == 'dropdown'){
+                        $options = $value['data']['options']; 
+                        $input = form_dropdown($value['atribut']['name'], $options, null, $value['atribut']);
+                    }elseif($value['atribut']['type'] == 'hidden'){
+                        $input = form_hidden($value['atribut']);
+                    }
+                    $input .= '                @error(\''.$value['atribut']['name'].'\')<small class="text-danger">{{ $message }}</small>@enderror';
+                    $this->form .= $this->create_stacked_input($input, $label);
+                }
+            }
+            
+            $this->form .= '<button class="btn btn-primary" type="submit">Insert '.str_replace('_', ' ', $this->table).'</button>';
+            $this->form .= "{{ Form::close() }}";
+            return $this->form;
+        }
+
         public function retreive_form_config(){
             return $this->form_config;
         }
@@ -312,9 +363,63 @@
             }
         }
 
-        public function generate_form_validation(array $new_form_config = array() ){
-            $form_validation = '
-                    $config = array(';
+        public function set_laravel_form_config($prefix = 'insert'){
+            $this->form_config = NULL;
+
+            //FUNGSI INI DIGUNAKAN UNTUK MEMBUAT FORM CONFIG DARI SEBUAH TABLE DENGAN SETINGAN DEFAULT
+            if($this->table == NULL || $this->table == ''){
+                $this->error_msg[] = "Tidak ada table yang dipilih";
+                return false;
+            }
+
+            $field_data = $this->_CI->db->field_data($this->table);
+                
+            foreach ($field_data as $key => $value) {
+ 
+                $atribut = array(
+                    'name'          => $prefix.'_'.$value->name,
+                    'id'            => $prefix.'_'.$this->table.'_'.$value->name,
+                    'class'         => 'form-control',
+                    'value'         => "{{ old('".$value->name."') }}",
+                    'required'      => "true"
+                );
+
+
+                if(
+                    $value->primary_key == 0 &&
+                    strpos($value->name, 'id') === FALSE
+                ){
+                    if($value->type == 'varchar'){
+                        $atribut['type'] = 'text';
+                    }elseif ($value->type == 'int') {
+                        $atribut['min'] = '0';
+                        $atribut['type'] = 'number';
+                    }elseif ($value->type == 'text') {
+                        $atribut['type'] = 'text';
+                    }elseif ($value->type == 'boolean') {
+    
+                    }elseif ($value->type == 'date') {
+                        $atribut['type'] = 'text';
+                        $atribut['class'] = 'form-control datepicker';
+                    }elseif($value->type == 'enum'){
+                        $atribut['type'] = 'dropdown';
+                        $data['options'] = $this->get_possible_enum($this->table, $value->name);
+                        $this->form_config[$value->name]["data"] =  $data;
+                    }else{
+                        //untuk jenis kolom lain seperti timestamp
+                        continue;
+                    }
+
+                }else{
+                    $atribut['type'] = 'number';
+                }
+                
+                $this->form_config[$value->name]["atribut"] =  $atribut;
+            }
+        }
+
+        public function generate_form_validation(array $new_form_config = array(), $laravel = FALSE){
+            
             if($new_form_config == null){
                 if($this->form_config == null){
                     //MELAKUKAN SET DEFAULT form_config
@@ -324,41 +429,58 @@
                 $this->form_config = $new_form_config;
             }
 
-            foreach ($this->form_config as $key => $value) {
-                if(strpos($value['atribut']['name'], 'id_'.$this->table) === FALSE){
-
-                    $label = ucwords(str_replace('_', ' ', $this->create_label_from_name($value['atribut']['name'])));
-                    if($value['atribut']['type'] == 'email'){
-                        $form_validation .= "
-                                array(
-                                    'field' => '{$value['atribut']['name']}',
-                                    'label' => '{$label}',
-                                    'rules' => 'trim|required|valid_email'
-                                )";
-                    }else{
-                        $form_validation .= "
-                                array(
-                                    'field' => '{$value['atribut']['name']}',
-                                    'label' => '{$label}',
-                                    'rules' => 'required'
-                                )";
-                    }
+            if($laravel == FALSE)
+            {
+                $form_validation = '
+                $config = array(';
+                foreach ($this->form_config as $key => $value) {
+                    if(strpos($value['atribut']['name'], 'id_'.$this->table) === FALSE){
     
-                    if(array_key_last($this->form_config) != $key){
-                        $form_validation .= ',';
+                        $label = ucwords(str_replace('_', ' ', $this->create_label_from_name($value['atribut']['name'])));
+                        if($value['atribut']['type'] == 'email'){
+                            $form_validation .= "
+                                    array(
+                                        'field' => '{$value['atribut']['name']}',
+                                        'label' => '{$label}',
+                                        'rules' => 'trim|required|valid_email'
+                                    )";
+                        }else{
+                            $form_validation .= "
+                                    array(
+                                        'field' => '{$value['atribut']['name']}',
+                                        'label' => '{$label}',
+                                        'rules' => 'required'
+                                    )";
+                        }
+        
+                        if(array_key_last($this->form_config) != $key){
+                            $form_validation .= ',';
+                        }
                     }
+                        
                 }
-                    
-            }
-            $form_validation .= '
-                        );';
+                $form_validation .= '
+                            );';
+    
+                return $form_validation;
 
-            return $form_validation;
+            }else
+            {
+                $form_validation = '$request->validate([';
+                
+                foreach ($this->form_config as $key => $value) {
+                    $form_validation .= "
+                        '{$value['atribut']['name']}'=>'required',";
+                }
+                
+                $form_validation .= '
+                    ]);';
+                return $form_validation;
+            }
         }
                 
-        public function generate_array_model(array $new_form_config = array() ){
-            $array_model = '
-                        $array_model = array(';
+        public function generate_array_model(array $new_form_config = array(), $laravel = FALSE, $edit_laravel = FALSE){
+           
             if($new_form_config == null){
                 if($this->form_config == null){
                     //MELAKUKAN SET DEFAULT form_config
@@ -368,21 +490,52 @@
                 $this->form_config = $new_form_config;
             }
 
-            foreach ($this->form_config as $key => $value) {
-                $input_name = $value['atribut']['name'];
-                $column_name = $this->convert_input_name_to_column($input_name);
+            if($laravel == FALSE)
+            {
+
+                $array_model = '
+                $array_model = array(';
+                foreach ($this->form_config as $key => $value) {
+                    $input_name = $value['atribut']['name'];
+                    $column_name = $this->convert_input_name_to_column($input_name);
+    
+                    $array_model .= '
+                                \''.$column_name.'\' => $this->input->post(\''.$input_name.'\', TRUE)';
+    
+                    if(array_key_last($this->form_config) != $key){
+                        $array_model .= ',';
+                    }
+                }
+                $array_model .= '
+                            );';
+                
+                return $array_model;
+            }else
+            {
+                if($edit_laravel == FALSE)
+                {
+                    $array_model = "
+                    \$$this->table = new ".ucwords($this->table)."([
+                    ";
+                }else{
+                    $array_model = "
+                    \$$this->table = ".ucwords($this->table)."::find(\$id)([
+                    ";
+                }
+
+                foreach ($this->form_config as $key => $value) {
+                    $input_name = $value['atribut']['name'];
+                    $column_name = $this->convert_input_name_to_column($input_name);
+    
+                    $array_model .= "
+                                '$input_name' => \$request->get('$column_name'),";
+                }
 
                 $array_model .= '
-                            \''.$column_name.'\' => $this->input->post(\''.$input_name.'\', TRUE)';
-
-                if(array_key_last($this->form_config) != $key){
-                    $array_model .= ',';
-                }
+                            ]);';
+                
+                return $array_model;
             }
-            $array_model .= '
-                        );';
-            
-            return $array_model;
         }
 
         public function generate_insert_controller($array_model = true){
@@ -432,6 +585,26 @@
                 }
             }
             ';
+            return $controller;
+        }
+
+        public function generate_laravel_insert_controller($array_model = true){
+            $this->set_form_config('insert');
+
+            $controller = '
+                //store
+            ';
+
+            $string_form_validation = $this->generate_form_validation(array(), TRUE);
+            
+            
+            $controller .= '        '.$string_form_validation;
+
+
+            $controller .= $this->generate_array_model(array(), TRUE);
+            
+            $controller .= ucwords($this->table).'::create($request->all());';
+            $controller .= $this->table.'->save();';
             return $controller;
         }
 
@@ -524,6 +697,26 @@
             ';
             return $controller;
         }
+        
+        public function generate_laravel_edit_controller($array_model = true){
+            
+            $this->set_form_config('edit');
+
+            $controller = '
+                //UPDATE
+            ';
+
+            $string_form_validation = $this->generate_form_validation(array(), TRUE);
+            
+            
+            $controller .= '        '.$string_form_validation;
+
+            $controller .= $this->generate_array_model(array(), TRUE, TRUE);
+            
+            $controller .= "
+            ".$this->table.'->save();';
+            return $controller;
+        }
 
         public function generate_get_specific_controller($array_model = true){
             $controller = '
@@ -561,7 +754,7 @@
             return $controller;
         }
 
-        public function generate_table(array $new_form_config = array() ){
+        public function generate_table(array $new_form_config = array(), $laravel = FALSE){
             if($new_form_config == null){
                 if($this->form_config == null){
                     //MELAKUKAN SET DEFAULT form_config
@@ -570,53 +763,108 @@
             }else{
                 $this->form_config = $new_form_config;
             }
-            $table = '
-            <table class="table table-striped" id="table'.$this->to_camel_case($this->table).'">
-                    <thead>
-                        <tr>';
-                $table .= "
-                            <td>No</td>";
-            foreach ($this->form_config as $key => $value) {
-                    $label = $this->create_label_from_name($value['atribut']['name']);
-                    $table .= "
-                            <td>$label</td>";
-            }
-            $table .= "
-                            <td>Aksi</td>";
 
-            $table .= '
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach($data_'.$this->table.' as $k_'.$this->table.' => $v_'.$this->table.'):?>
+            if($laravel == FALSE)
+            {
+                $table = '
+                <table class="table table-striped" id="table'.$this->to_camel_case($this->table).'">
+                        <thead>
                             <tr>';
-
+                    $table .= "
+                                <td>No</td>";
+                foreach ($this->form_config as $key => $value) {
+                        $label = $this->create_label_from_name($value['atribut']['name']);
+                        $table .= "
+                                <td>$label</td>";
+                }
                 $table .= "
-                            <td></td>";
-            foreach ($this->form_config as $key => $value) {
+                                <td>Aksi</td>";
+    
                 $table .= '
-                                <td><?= $v_'.$this->table.'->'.$this->convert_input_name_to_column($value['atribut']['name']).'?></td>';
-            }
-            
-            $table .= '         <td>
-                                    <button class="btn btn-danger btn-sm" onclick="delete'.$this->to_camel_case($this->table).'(<?= $v_'.$this->table.'->id_'.$this->table.'?>)">
-                                        <i class="material-icons"> 
-                                        delete
-                                        </i>
-                                    </button>
-                                    <button class="btn btn-info btn-sm"  onclick="openModal'.$this->to_camel_case($this->table).'(<?= $v_'.$this->table.'->id_'.$this->table.'?>)">
-                                        <i class="material-icons"> 
-                                        create
-                                        </i>
-                                    </button>
-                                </td>
                             </tr>
-                        <?php endforeach;?>
-                    </tbody>
-                </table>
-                ';
+                        </thead>
+                        <tbody>
+                            <?php foreach($data_'.$this->table.' as $k_'.$this->table.' => $v_'.$this->table.'):?>
+                                <tr>';
+    
+                    $table .= "
+                                <td></td>";
+                foreach ($this->form_config as $key => $value) {
+                    $table .= '
+                                    <td><?= $v_'.$this->table.'->'.$this->convert_input_name_to_column($value['atribut']['name']).'?></td>';
+                }
+                
+                $table .= '         <td>
+                                        <button class="btn btn-danger btn-sm" onclick="delete'.$this->to_camel_case($this->table).'(<?= $v_'.$this->table.'->id_'.$this->table.'?>)">
+                                            <i class="material-icons"> 
+                                            delete
+                                            </i>
+                                        </button>
+                                        <button class="btn btn-info btn-sm"  onclick="openModal'.$this->to_camel_case($this->table).'(<?= $v_'.$this->table.'->id_'.$this->table.'?>)">
+                                            <i class="material-icons"> 
+                                            create
+                                            </i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            <?php endforeach;?>
+                        </tbody>
+                    </table>
+                    ';
+    
+                return $table;
+            }else
+            {
 
-            return $table;
+                $table = '
+                <table class="table table-striped" id="table'.$this->to_camel_case($this->table).'">
+                        <thead>
+                            <tr>';
+                    $table .= "
+                                <td>No</td>";
+                foreach ($this->form_config as $key => $value) {
+                        $label = $this->create_label_from_name($value['atribut']['name']);
+                        $table .= "
+                                <td>$label</td>";
+                }
+                $table .= "
+                                <td>Aksi</td>";
+    
+                $table .= '
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($'.$this->table.' as $'.$this->to_singular($this->table).')
+                                <tr>';
+    
+                    $table .= "
+                                <td></td>";
+                foreach ($this->form_config as $key => $value) {
+                    $table .= '
+                                    <td>{{ $'.$this->to_singular($this->table).'->'.$this->convert_input_name_to_column($value['atribut']['name']).' }}</td>';
+                }
+                
+                $table .= '         
+                                    <td>
+                                        <form action="{{ route(\''.$this->to_singular($this->table).'.destroy\', $'.$this->to_singular($this->table).'->'.$this->to_singular($this->table).'_id) }}" method="POST" onsubmit="delete'.$this->to_camel_case($this->table).'()">
+                                            @csrf
+                                            @method(\'DELETE\')
+                                            <button type="submit" class="btn btn-danger">Delete</button>
+                                        </form>
+                                        <button class="btn btn-info btn-sm"  onclick="openModal'.$this->to_camel_case($this->table).'({ $'.$this->table.'->'.$this->to_singular($this->table).'_id }})">
+                                            <i class="material-icons"> 
+                                            create
+                                            </i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                    ';
+    
+                return $table;
+            }
         }
 
         function generate_javascript(array $new_form_config = array() ){
@@ -716,6 +964,13 @@
         
         public function to_hypens($name){
             return str_replace('_', '-', $name);
+        }
+
+        public function to_singular($name){
+            if(substr($name, -1) == 's')
+            {
+                return substr_replace($name, "", -1);
+            }
         }
     }
     

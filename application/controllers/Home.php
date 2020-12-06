@@ -35,6 +35,7 @@ class Home extends CI_Controller {
 		$this->form_generator->initialize($config);
         
 		$data['form'] = $this->form_generator->generate_form();
+		$data['laravel_form'] = $this->form_generator->generate_laravel_form();
 		$data['edit_modal'] = $this->form_generator->generate_edit_modal();
         $data['form_config_json'] = json_encode($this->form_generator->retreive_form_config());
         $data['form_config'] = $this->form_generator->retreive_form_config();
@@ -45,8 +46,12 @@ class Home extends CI_Controller {
         $data['get_specific_controller'] = $this->form_generator->generate_get_specific_controller();
         $data['view_controller'] = $this->form_generator->generate_view_controller();
         
+        
+        $data['laravel_insert_controller'] = $this->form_generator->generate_laravel_insert_controller();
+        $data['laravel_edit_controller'] = $this->form_generator->generate_laravel_edit_controller();
+
         $data['model'] = $this->form_generator->generate_array_model();
-        $data['table'] = $this->form_generator->generate_table();
+        $data['table'] = $this->form_generator->generate_table(array(), TRUE);
         $data['javascript'] = $this->form_generator->generate_javascript();
         $this->load->view('home', $data);
 		

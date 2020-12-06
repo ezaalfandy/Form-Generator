@@ -140,6 +140,11 @@
                       Stacked Form
                     </a>
                   </li><li class="nav-item">
+                    <a class="nav-link" data-toggle="tab" href="#laravelForm" role="tablist">
+                      Laravel Form
+                    </a>
+                  </li>
+                  <li class="nav-item">
                     <a class="nav-link" data-toggle="tab" href="#editModal" role="tablist">
                       Edit Modal
                     </a>
@@ -161,6 +166,14 @@
                       <?= $form?> 
                     </textarea>
                     <button class="btn btn-default" data-clipboard-target="#stackedFormCode">
+                        copy
+                    </button>
+                  </div>
+                  <div class="tab-pane" id="laravelForm">
+                    <textarea  id="laravelFormCode" cols="100" rows="10">
+                      <?= $laravel_form?> 
+                    </textarea>
+                    <button class="btn btn-default" data-clipboard-target="#laravelFormCode">
                         copy
                     </button>
                   </div>
@@ -193,6 +206,7 @@
             </div>
           </div>
         </div>
+        
         <div class="row">
           <div class="col-md-12">
             <div class="card">
@@ -204,6 +218,10 @@
                   <li class="nav-item">
                     <a class="nav-link active" data-toggle="tab" href="#controller" role="tablist">
                       Controller
+                    </a>
+                  </li><li class="nav-item">
+                    <a class="nav-link " data-toggle="tab" href="#laravelController" role="tablist">
+                      Laravel Controller
                     </a>
                   </li>
                   <li class="nav-item">
@@ -222,6 +240,15 @@
                       <?= $get_specific_controller?>
                     </textarea>
                     <button class="btn btn-default" data-clipboard-target="#controllerCode">
+                        copy
+                    </button>
+                  </div>
+                  <div class="tab-pane " id="laravelController">
+                    <textarea  id="laravelControllerCode" cols="100" rows="10">
+                      <?= $laravel_insert_controller?>
+                      <?= $laravel_edit_controller?>
+                    </textarea>
+                    <button class="btn btn-default" data-clipboard-target="#laravelControllerCode">
                         copy
                     </button>
                   </div>
