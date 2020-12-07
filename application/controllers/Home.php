@@ -32,27 +32,29 @@ class Home extends CI_Controller {
             "session_key" => $this->uri->segment(5),
             "session_value" => $this->uri->segment(6)
         );
-		$this->form_generator->initialize($config);
-        
-		$data['form'] = $this->form_generator->generate_form();
-		$data['laravel_form'] = $this->form_generator->generate_laravel_form();
-		$data['edit_modal'] = $this->form_generator->generate_edit_modal();
-        $data['form_config_json'] = json_encode($this->form_generator->retreive_form_config());
-        $data['form_config'] = $this->form_generator->retreive_form_config();
-        
-        $data['insert_controller'] = $this->form_generator->generate_insert_controller();
-        $data['delete_controller'] = $this->form_generator->generate_delete_controller();
-        $data['edit_controller'] = $this->form_generator->generate_edit_controller();
-        $data['get_specific_controller'] = $this->form_generator->generate_get_specific_controller();
-        $data['view_controller'] = $this->form_generator->generate_view_controller();
-        
-        
-        $data['laravel_insert_controller'] = $this->form_generator->generate_laravel_insert_controller();
-        $data['laravel_edit_controller'] = $this->form_generator->generate_laravel_edit_controller();
 
-        $data['model'] = $this->form_generator->generate_array_model();
-        $data['table'] = $this->form_generator->generate_table(array(), TRUE);
-        $data['javascript'] = $this->form_generator->generate_javascript();
+
+        
+        $generator = $this->laravel_generator;
+
+		$generator->initialize($config);
+        
+		$data['form'] = $generator->generate_form();
+		$data['laravel_form'] = $generator->generate_form();
+		$data['edit_modal'] = $generator->generate_edit_modal();
+        $data['form_config_json'] = json_encode($generator->retreive_form_config());
+        $data['form_config'] = $generator->retreive_form_config();
+        
+        $data['insert_controller'] = $generator->generate_insert_controller();
+        $data['delete_controller'] = $generator->generate_delete_controller();
+        $data['edit_controller'] = $generator->generate_edit_controller();
+        $data['get_specific_controller'] = $generator->generate_get_specific_controller();
+        $data['view_controller'] = $generator->generate_view_controller();
+        
+
+        $data['model'] = $generator->generate_array_model();
+        $data['table'] = $generator->generate_table(array(), TRUE);
+        $data['javascript'] = $generator->generate_javascript();
         $this->load->view('home', $data);
 		
     }

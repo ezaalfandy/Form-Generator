@@ -1,6 +1,6 @@
 <?php
 
-    class Form_generator{
+    class Ci_generator{
 
         /*
             STRUKTUR DASAR FORM CONFIG

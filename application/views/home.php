@@ -139,10 +139,6 @@
                     <a class="nav-link active" data-toggle="tab" href="#stackedForm" role="tablist">
                       Stacked Form
                     </a>
-                  </li><li class="nav-item">
-                    <a class="nav-link" data-toggle="tab" href="#laravelForm" role="tablist">
-                      Laravel Form
-                    </a>
                   </li>
                   <li class="nav-item">
                     <a class="nav-link" data-toggle="tab" href="#editModal" role="tablist">
@@ -166,14 +162,6 @@
                       <?= $form?> 
                     </textarea>
                     <button class="btn btn-default" data-clipboard-target="#stackedFormCode">
-                        copy
-                    </button>
-                  </div>
-                  <div class="tab-pane" id="laravelForm">
-                    <textarea  id="laravelFormCode" cols="100" rows="10">
-                      <?= $laravel_form?> 
-                    </textarea>
-                    <button class="btn btn-default" data-clipboard-target="#laravelFormCode">
                         copy
                     </button>
                   </div>
@@ -216,12 +204,23 @@
               <div class="card-body">
                 <ul class="nav nav-pills nav-pills-primary" role="tablist">
                   <li class="nav-item">
-                    <a class="nav-link active" data-toggle="tab" href="#controller" role="tablist">
-                      Controller
+                    <a class="nav-link active" data-toggle="tab" href="#CreateController" role="tablist">
+                      Create
                     </a>
-                  </li><li class="nav-item">
-                    <a class="nav-link " data-toggle="tab" href="#laravelController" role="tablist">
-                      Laravel Controller
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" data-toggle="tab" href="#ReadController" role="tablist">
+                      Read
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" data-toggle="tab" href="#UpdateController" role="tablist">
+                      Update
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" data-toggle="tab" href="#DeleteController" role="tablist">
+                      Delete
                     </a>
                   </li>
                   <li class="nav-item">
@@ -231,24 +230,35 @@
                   </li>
                 </ul>
                 <div class="tab-content tab-space">
-                  <div class="tab-pane active" id="controller">
-                    <textarea  id="controllerCode" cols="100" rows="10">
-                      <?= $view_controller?>
+                  <div class="tab-pane active" id="CreateController">
+                    <textarea  id="CreateControllerCode" cols="100" rows="10">
                       <?= $insert_controller?>
-                      <?= $delete_controller?>
-                      <?= $edit_controller?>
-                      <?= $get_specific_controller?>
                     </textarea>
-                    <button class="btn btn-default" data-clipboard-target="#controllerCode">
+                    <button class="btn btn-default" data-clipboard-target="#CreateControllerCode">
                         copy
                     </button>
                   </div>
-                  <div class="tab-pane " id="laravelController">
-                    <textarea  id="laravelControllerCode" cols="100" rows="10">
-                      <?= $laravel_insert_controller?>
-                      <?= $laravel_edit_controller?>
+                  <div class="tab-pane" id="ReadController">
+                    <textarea  id="ReadControllerCode" cols="100" rows="10">
+                      <?= $view_controller?>
                     </textarea>
-                    <button class="btn btn-default" data-clipboard-target="#laravelControllerCode">
+                    <button class="btn btn-default" data-clipboard-target="#ReadControllerCode">
+                        copy
+                    </button>
+                  </div>
+                  <div class="tab-pane" id="UpdateController">
+                    <textarea  id="UpdateControllerCode" cols="100" rows="10">
+                      <?= $edit_controller?>
+                    </textarea>
+                    <button class="btn btn-default" data-clipboard-target="#UpdateControllerCode">
+                        copy
+                    </button>
+                  </div>
+                  <div class="tab-pane" id="DeleteController">
+                    <textarea  id="DeleteControllerCode" cols="100" rows="10">
+                      <?= $delete_controller?>
+                    </textarea>
+                    <button class="btn btn-default" data-clipboard-target="#DeleteControllerCode">
                         copy
                     </button>
                   </div>
