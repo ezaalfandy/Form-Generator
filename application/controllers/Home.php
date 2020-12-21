@@ -28,7 +28,7 @@ class Home extends CI_Controller {
         
         $config = array(
             "table" => $table, 
-            "controller" => $this->uri->segment(4),
+            "controller" => ($this->uri->segment(4)) ? $this->uri->segment(4) : $this->to_singular($table),
             "session_key" => $this->uri->segment(5),
             "session_value" => $this->uri->segment(6)
         );
@@ -58,7 +58,13 @@ class Home extends CI_Controller {
         $this->load->view('home', $data);
 		
     }
-                        
+                       
+    public function to_singular($name){
+        if(substr($name, -1) == 's')
+        {
+            return substr_replace($name, "", -1);
+        }
+    } 
     
                         
 }   

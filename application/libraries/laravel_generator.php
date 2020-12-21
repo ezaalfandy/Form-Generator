@@ -121,20 +121,24 @@
             
 
             $modal ='
-            <div class="modal fade" id="modalEdit'.$this->to_camel_case($this->table).'" tabindex="-1" role="dialog" aria-labelledby="modelTitleId" aria-hidden="true">
+            <div class="modal fade" id="modalEdit'.$this->to_camel_case($this->to_singular($this->table)).'" tabindex="-1" role="dialog" aria-labelledby="modelTitleId" aria-hidden="true">
                 <div class="modal-dialog" role="document">
                     <div class="modal-content">';
 
-            $modal .= form_open(" ", $form_atribut);
+            
+            $modal .= '
+                        <form method="POST" novalidate="novalidate" id="formEdit'.$this->to_camel_case($this->to_singular($this->table)).'" action="{{ route(\''.$this->controller.'.update\') }} ">
+                                @csrf
+                                @method(\'PUT\')';
 
             $modal .= '
-                        <div class="modal-header">
-                            <h5 class="modal-title">Edit '.str_replace('_', ' ', $this->table).'</h5>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-                        <div class="modal-body">';
+                            <div class="modal-header">
+                                <h5 class="modal-title">Edit '.str_replace('_', ' ',$this->to_singular($this->table)).'</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">';
 
             foreach ($this->form_config as $key => $value) {
                 if(strpos($value['atribut']['name'], 'id_'.$this->table) === FALSE){
@@ -155,8 +159,8 @@
                     }elseif($value['atribut']['type'] == 'hidden'){
                         $input = form_hidden($value['atribut']);
                     }
-                    $input .= '                    <small class="text-danger"><?= form_error(\''.$value['atribut']['name'].'\'); ?></small>';
-                    $modal .= $this->create_stacked_input($input, $label);
+                    $input .= '                                     @error(\''.$value['atribut']['name'].'\')<small class="text-danger">{{ $message }}</small>@enderror';
+                    $modal .= '     '.$this->create_stacked_input($input, $label);
                 }else{
                     $modal .= form_hidden($value['atribut']['name'], $value['atribut']['value']);
                 }
@@ -164,16 +168,14 @@
             }
             
 
-            $modal .= '
-                        </div>
-                        <div class="modal-footer">
-                            '.form_reset(null, 'Reset', 'class="btn btn-outline-primary"').'
-                            '.form_submit(null, 'Submit', 'class="btn btn-primary"').'
-                        </div>
-                        ';
-
-            $modal .= form_close();
-
+            $modal .= '     
+                            </div>
+                            <div class="modal-footer">';
+            $modal .= '         
+                                <button class="btn btn-primary" type="submit">Insert '.str_replace('_', ' ', $this->to_singular($this->table)).'</button>
+                            </div>';
+            $modal .= "
+                        </form>";
             $modal .= '
                     </div>
                 </div>
@@ -201,7 +203,8 @@
             );
             
             $this->form = NULL;
-            $this->form .= '{{ Form::open(array("novalidate" => "novalidate", "id" => "formInsert'.$this->to_camel_case($this->table).'", "action" => "'.$this->controller.'Controller@store")) }}';
+            $this->form .= '<form method="POST" novalidate="novalidate" id="formInsert'.$this->to_camel_case($this->table).'" action="{{ route(\''.$this->controller.'.store\') }} ">
+                            @csrf';
             
             foreach ($this->form_config as $key => $value) {
                 if(strpos($value['atribut']['name'], 'id_'.$this->table) === FALSE){
@@ -222,14 +225,15 @@
                     }elseif($value['atribut']['type'] == 'hidden'){
                         $input = form_hidden($value['atribut']);
                     }
-                    $input .= '                @error(\''.$value['atribut']['name'].'\')<small class="text-danger">{{ $message }}</small>@enderror';
+                    $input .= '                                     @error(\''.$value['atribut']['name'].'\')<small class="text-danger">{{ $message }}</small>@enderror';
                     $this->form .= $this->create_stacked_input($input, $label);
                 }
             }
             
-            $this->form .= '    <button class="btn btn-primary" type="submit">Insert '.str_replace('_', ' ', $this->table).'</button>';
+            $this->form .= '    
+                            <button class="btn btn-primary" type="submit">Insert '.str_replace('_', ' ', $this->to_singular($this->table)).'</button>';
             $this->form .= "
-                    {{ Form::close() }}";
+                        </form>";
             return $this->form;
         }
 
@@ -252,11 +256,10 @@
 
         public function create_stacked_input($input, $label){
             $stacked_input = '
-                <div class="form-group">
-                    '.$label.'
-                    '.trim($input).'
-                </div>
-            ';
+                                <div class="form-group">
+                                    '.$label.'
+                                    '.trim($input).'
+                                </div>';
             return $stacked_input;
         }
 
@@ -380,8 +383,11 @@
             $controller .= '    '.$this->generate_array_model(array(), FALSE);
     
             $controller .= '
-                '.ucwords($this->table).'::create($request->all());';
-            $controller .= $this->table.'->save();';
+                '.ucwords($this->to_singular($this->table)).'::create($request->all());';
+            $controller .= "
+                return redirect()->route('".$this->to_singular($this->table).".index')
+                ->with('success', '".ucwords($this->to_singular($this->table))." created successfully');";
+        
             return $controller;
         }
 
@@ -452,7 +458,7 @@
             return $controller;
         }
 
-        public function generate_table(array $new_form_config = array(), $laravel = FALSE){
+        public function generate_table(array $new_form_config = array()){
             if($new_form_config == null){
                 if($this->form_config == null){
                     //MELAKUKAN SET DEFAULT form_config
@@ -462,101 +468,59 @@
                 $this->form_config = $new_form_config;
             }
 
-            if($laravel == FALSE)
-            {
-                $table = '
-                <table class="table table-striped" id="table'.$this->to_camel_case($this->table).'">
-                        <thead>
-                            <tr>';
-                    $table .= "
-                                <td>No</td>";
-                foreach ($this->form_config as $key => $value) {
-                        $label = $this->create_label_from_name($value['atribut']['name']);
-                        $table .= "
-                                <td>$label</td>";
-                }
-                $table .= "
-                                <td>Aksi</td>";
-    
-                $table .= '
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach($data_'.$this->table.' as $k_'.$this->table.' => $v_'.$this->table.'):?>
-                                <tr>';
-    
-                    $table .= "
-                                <td></td>";
-                foreach ($this->form_config as $key => $value) {
-                    $table .= '
-                                    <td><?= $v_'.$this->table.'->'.$this->convert_input_name_to_column($value['atribut']['name']).'?></td>';
-                }
-                
-                $table .= '         <td>
-                                        <button class="btn btn-danger btn-link btn-sm" onclick="delete'.$this->to_camel_case($this->table).'(<?= $v_'.$this->table.'->id_'.$this->table.'?>)">
-                                            Hapus
-                                        </button>
-                                        <button class="btn btn-info btn-link btn-sm"  onclick="openModal'.$this->to_camel_case($this->table).'(<?= $v_'.$this->table.'->id_'.$this->table.'?>)">
-                                            Edit
-                                        </button>
-                                    </td>
-                                </tr>
-                            <?php endforeach;?>
-                        </tbody>
-                    </table>
-                    ';
-    
-                return $table;
-            }else
-            {
 
-                $table = '
-                <table class="table table-striped" id="table'.$this->to_camel_case($this->table).'">
-                        <thead>
-                            <tr>';
-                    $table .= "
-                                <td>No</td>";
-                foreach ($this->form_config as $key => $value) {
-                        $label = $this->create_label_from_name($value['atribut']['name']);
-                        $table .= "
-                                <td>$label</td>";
-                }
+            $table = '
+            <table class="table table-striped" id="table'.$this->to_camel_case($this->table).'">
+                    <thead>
+                        <tr>';
                 $table .= "
-                                <td>Aksi</td>";
-    
-                $table .= '
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($'.$this->table.' as $'.$this->to_singular($this->table).')
-                                <tr>';
-    
+                            <td>No</td>";
+            foreach ($this->form_config as $key => $value) {
+                    $label = $this->create_label_from_name($value['atribut']['name']);
                     $table .= "
-                                <td></td>";
-                foreach ($this->form_config as $key => $value) {
-                    $table .= '
-                                    <td>{{ $'.$this->to_singular($this->table).'->'.$this->convert_input_name_to_column($value['atribut']['name']).' }}</td>';
-                }
-                
-                $table .= '         
-                                    <td>
-                                        <form class="d-inline-block" action="{{ route(\''.$this->to_singular($this->table).'.destroy\', $'.$this->to_singular($this->table).'->'.$this->to_singular($this->table).'_id) }}" method="POST" onsubmit="delete'.$this->to_camel_case($this->table).'()">
-                                            @csrf
-                                            @method(\'DELETE\')
-                                            <button type="submit" class="btn btn-link btn-danger">Delete</button>
-                                        </form>
-                                        <button class="btn btn-info btn-link btn-sm"  onclick="openModal'.$this->to_camel_case($this->table).'({ $'.$this->table.'->'.$this->to_singular($this->table).'_id }})">
-                                            Edit
-                                        </button>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                    ';
-    
-                return $table;
+                            <td>$label</td>";
             }
+            $table .= "
+                            <td>Aksi</td>";
+
+            $table .= '
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($'.$this->table.' as $'.$this->to_singular($this->table).')
+                            <tr>';
+
+                $table .= "
+                            <td></td>";
+            foreach ($this->form_config as $key => $value) {
+                $table .= '
+                                <td>{{ $'.$this->to_singular($this->table).'->'.$this->convert_input_name_to_column($value['atribut']['name']).' }}</td>';
+            }
+            
+            $table .= '         
+                                <td>
+                                    <form class="d-inline-block delete-form-'.$this->to_singular($this->table).'" 
+                                        action="{{ route(\''.$this->to_singular($this->table).'.destroy\', $'.$this->to_singular($this->table).'->'.$this->to_singular($this->table).'_id) }}" 
+                                        method="POST" onsubmit="delete'.$this->to_camel_case($this->table).'()">
+                                        @csrf
+                                        @method(\'DELETE\')
+                                        <button type="submit" class="btn btn-link btn-danger">Delete</button>
+                                    </form>
+                                    <button class="btn btn-info btn-link btn-sm"  
+                                        onclick="openModal'.$this->to_camel_case($this->to_singular($this->table)).'(
+                                            \'{{ route(\''.$this->to_singular($this->table).'.destroy\', $'.$this->to_singular($this->table).'->'.$this->to_singular($this->table).'_id) }}\'
+                                        )"
+                                    >
+                                        Edit
+                                    </button>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+                ';
+
+            return $table;
         }
 
         function generate_javascript(array $new_form_config = array() ){
@@ -594,10 +558,13 @@
                     $(\'#formEdit'.$this->to_camel_case($this->table).'\').validate();
                 });
 
-                function delete'.$this->to_camel_case($this->table).'(){
+                
+                $(\.delete-form-'.$this->to_singular($this->table).'"\').on(\'click\', function (e) {
+                    e.preventDefault();
+                    var form = $(this).parents(\'form\');
                     swal({
                         title: \'Apakah Anda Yakin ?\',
-                        text: "Data '.ucwords(str_replace('_', ' ', $this->table)).' akan dihapus dan tidak dapat dikembalikan !",
+                        text: "Data '.$this->to_singular($this->table).' akan dihapus dan tidak dapat dikembalikan !",
                         type: \'warning\',
                         showCancelButton: true,
                         confirmButtonClass: \'btn btn-danger\',
@@ -606,25 +573,22 @@
                         buttonsStyling: false
                     }).then(function(result) {
                         if(result.value === true){
-                            console.log(this)
+                            $(form).submit();
                         }
                     })
-                }
+                });
 
-                function openModal'.$this->to_camel_case($this->table).'($'.$this->to_singular($this->table).'_id){
-                    $.getJSON("{{ route(\''.$this->to_singular($this->table).'.show\') }}"+$'.$this->to_singular($this->table).'_id,
+                function openModal'.$this->to_camel_case($this->to_singular($this->table)).'($url){
+                    $.getJSON($url,
                         function (data, textStatus, jqXHR) {
-                                
-                            $(\'#formEdit'.$this->to_camel_case($this->table).' .form-group\').addClass(\'is-filled\');
-                            ';
-
+                            $(\'#formEdit'.$this->to_camel_case($this->to_singular($this->table)).' .form-group\').addClass(\'is-filled\');';
                             foreach ($this->form_config as $k => $v) {
                                 $column_name = $this->convert_input_name_to_column($v['atribut']['name']);
                                 $javascript .= '
-                                $(\'#formEdit'.$this->to_camel_case($this->table).' [name="'.$v['atribut']['name'].'"]\').val(data.'.$column_name.');';
+                            $(\'#formEdit'.$this->to_camel_case($this->to_singular($this->table)).' [name="'.$v['atribut']['name'].'"]\').val(data.'.$column_name.');';
                             }
             $javascript .= '
-                                $(\'#modalEdit'.$this->to_camel_case($this->table).'\').modal(\'show\');
+                            $(\'#modalEdit'.$this->to_camel_case($this->to_singular($this->table)).'\').modal(\'show\');
                         }
                     );  
                 }
