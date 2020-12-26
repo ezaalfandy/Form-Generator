@@ -217,10 +217,31 @@
                         $input = form_input($value['atribut']);
                     }elseif ($value['atribut']['type'] == 'radio') {
             
+                    }elseif ($value['atribut']['type'] == 'textarea') {
+                        $input =  htmlspecialchars(form_textarea($value['atribut']));
+                        $input .= '
+                                    <div class="fileinput fileinput-new text-center d-block" data-provides="fileinput">
+                                        <div class="fileinput-new thumbnail">
+                                            <img src="{{ asset(\'material\') }}/img/image_placeholder.jpg" alt="...">
+                                        </div>
+                                        <div class="fileinput-preview fileinput-exists thumbnail"></div>
+                                        <div>
+                                            <span class="btn btn-primary btn-link  btn-file">
+                                                <span class="fileinput-new">Pilih Gambar</span>
+                                                <span class="fileinput-exists">Ganti</span>
+                                                <input type="file" name="'.$value['atribut']['name'].'" maxsize="2" extension="jpg|gif|png|jpeg">
+                                            </span>
+                                            <a  class="btn btn-danger btn-link fileinput-exists" data-dismiss="fileinput"><i class="fa fa-times"></i> Remove</a>
+                                        </div>
+                                    </div>
+                        ';
                     }elseif ($value['atribut']['type'] == 'checkbox') {
             
                     }elseif($value['atribut']['type'] == 'dropdown'){
-                        $options = $value['data']['options']; 
+                        $options = $value['data']['options'];
+                        $value['atribut']['class'] = 'selectpicker w-100';
+                        $value['atribut']['data-style'] = 'select-with-transition';
+
                         $input = form_dropdown($value['atribut']['name'], $options, null, $value['atribut']);
                     }elseif($value['atribut']['type'] == 'hidden'){
                         $input = form_hidden($value['atribut']);
@@ -295,7 +316,7 @@
                         $atribut['min'] = '0';
                         $atribut['type'] = 'number';
                     }elseif ($value->type == 'text') {
-                        $atribut['type'] = 'text';
+                        $atribut['type'] = 'textarea';
                     }elseif ($value->type == 'boolean') {
     
                     }elseif ($value->type == 'date') {
@@ -342,7 +363,7 @@
             return $form_validation;
         }
                 
-        public function generate_array_model(array $new_form_config = array(), $edit_laravel = FALSE){
+        public function generate_array_model(array $new_form_config = array()){
            
             if($new_form_config == null){
                 if($this->form_config == null){
@@ -353,14 +374,7 @@
                 $this->form_config = $new_form_config;
             }
 
-            if($edit_laravel == FALSE)
-            {
-                $array_model = "
-                \$$this->table = new ".ucwords($this->table)."([";
-            }else{
-                $array_model = "
-                \$$this->table = ".ucwords($this->table)."::find(\$id)([";
-            }
+            $array_model ="";
 
             foreach ($this->form_config as $key => $value) {
                 $input_name = $value['atribut']['name'];
@@ -369,9 +383,6 @@
                 $array_model .= "
                     '$input_name' => \$request->get('$column_name'),";
             }
-
-            $array_model .= '
-                ]);';
             
             return $array_model;
         }
@@ -380,8 +391,15 @@
             $this->set_form_config('insert');
             $string_form_validation = $this->generate_form_validation(array());
             $controller = $string_form_validation;
-            $controller .= '    '.$this->generate_array_model(array(), FALSE);
-    
+            
+            $controller .= '
+                $'.$this->to_singular($this->table).' = new "'.ucwords($this->to_singular($this->table)).'([';
+
+            $controller .= '    '.$this->generate_array_model();
+            
+
+            $controller .= '
+                ]);';
             $controller .= '
                 '.ucwords($this->to_singular($this->table)).'::create($request->all());';
             $controller .= "
@@ -395,7 +413,7 @@
             
             return "
                 $".$this->to_singular($this->table)."->delete();
-                return redirect()->route('".$this->table.".index')
+                return redirect()->route('".$this->to_singular($this->table).".index')
                 ->with('success', '".$this->to_singular($this->table)." berhasil dihapus');
             
             ";
@@ -412,11 +430,15 @@
             
             $controller = '        '.$string_form_validation;
 
-            $controller .= $this->generate_array_model(array(), TRUE);
+            $controller .= '
+                $newData = array(';
+            $controller .= $this->generate_array_model(array());
+            $controller .= '
+                );';
             
             $controller .= "
-                $".$this->table."->save();
-                return redirect()->route('".$this->table.".index')
+                $".$this->table."->update(\$newData);
+                return redirect()->route('".$this->to_singular($this->table).".index')
                 ->with('success', '".$this->table." berhasil diupdate');
                 ";
             return $controller;
@@ -499,12 +521,12 @@
             
             $table .= '         
                                 <td>
-                                    <form class="d-inline-block delete-form-'.$this->to_singular($this->table).'" 
+                                    <form class="d-inline-block" 
                                         action="{{ route(\''.$this->to_singular($this->table).'.destroy\', $'.$this->to_singular($this->table).'->'.$this->to_singular($this->table).'_id) }}" 
                                         method="POST" onsubmit="delete'.$this->to_camel_case($this->table).'()">
                                         @csrf
                                         @method(\'DELETE\')
-                                        <button type="submit" class="btn btn-link btn-danger">Delete</button>
+                                        <button type="button" class="btn btn-link btn-danger  delete-form-'.$this->to_singular($this->table).'">Delete</button>
                                     </form>
                                     <button class="btn btn-info btn-link btn-sm"  
                                         onclick="openModal'.$this->to_camel_case($this->to_singular($this->table)).'(
@@ -559,7 +581,7 @@
                 });
 
                 
-                $(\.delete-form-'.$this->to_singular($this->table).'"\').on(\'click\', function (e) {
+                $(\'.btn-delete-'.$this->to_singular($this->table).'\').on(\'click\', function (e) {
                     e.preventDefault();
                     var form = $(this).parents(\'form\');
                     swal({
@@ -623,7 +645,10 @@
         }
 
         public function to_singular($name){
-            if(substr($name, -1) == 's')
+            if(substr($name, -2) == 'es')
+            {
+                return substr_replace($name, "", -2);
+            }elseif(substr($name, -1) == 's')
             {
                 return substr_replace($name, "", -1);
             }
