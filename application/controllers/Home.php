@@ -42,6 +42,7 @@ class Home extends CI_Controller {
 		$data['form'] = $generator->generate_form();
 		$data['laravel_form'] = $generator->generate_form();
 		$data['edit_modal'] = $generator->generate_edit_modal();
+		$data['insert_modal'] = $generator->generate_insert_modal();
         $data['form_config_json'] = json_encode($generator->retreive_form_config());
         $data['form_config'] = $generator->retreive_form_config();
         

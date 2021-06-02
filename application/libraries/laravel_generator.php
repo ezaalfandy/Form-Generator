@@ -127,7 +127,7 @@
 
             
             $modal .= '
-                        <form method="POST" novalidate="novalidate" id="formEdit'.$this->to_camel_case($this->to_singular($this->table)).'" action="{{ route(\''.$this->controller.'.update\') }} ">
+                        <form method="POST" novalidate="novalidate" id="formEdit'.$this->to_camel_case($this->to_singular($this->table)).'" action="">
                                 @csrf
                                 @method(\'PUT\')';
 
@@ -141,24 +141,47 @@
                             <div class="modal-body">';
 
             foreach ($this->form_config as $key => $value) {
-                if(strpos($value['atribut']['name'], 'id_'.$this->table) === FALSE){
+                if(strpos($value['atribut']['name'], 'id') === FALSE){
                     $label = form_label(ucwords(str_replace('_', ' ', $this->create_label_from_name($value['atribut']['name']))), $value['atribut']['id']);
                     if($value['atribut']['type'] == 'text' || 
                        $value['atribut']['type'] == 'number' ||  
                        $value['atribut']['type'] == 'date'){
                         $input = form_input($value['atribut']);
-                    }elseif ($value['atribut']['type'] == 'text') {
-                        $input = form_input($value['atribut']);
-                    }elseif ($value['atribut']['type'] == 'radio') {
-            
+                    
+                    }elseif ($value['atribut']['type'] == 'textarea') {
+                        $input =  htmlspecialchars(form_textarea($value['atribut']));
+                        $input .= '
+                                    <div class="fileinput fileinput-new text-center d-block" data-provides="fileinput">
+                                        <div class="fileinput-new thumbnail">
+                                            <img src="{{ asset(\'material\') }}/img/image_placeholder.jpg" alt="...">
+                                        </div>
+                                        <div class="fileinput-preview fileinput-exists thumbnail"></div>
+                                        <div>
+                                            <span class="btn btn-primary btn-link  btn-file">
+                                                <span class="fileinput-new">Pilih Gambar</span>
+                                                <span class="fileinput-exists">Ganti</span>
+                                                <input type="file" name="'.$value['atribut']['name'].'" maxsize="2" extension="jpg|gif|png|jpeg">
+                                            </span>
+                                            <a  class="btn btn-danger btn-link fileinput-exists" data-dismiss="fileinput"><i class="fa fa-times"></i> Remove</a>
+                                        </div>
+                                    </div>
+                        ';
                     }elseif ($value['atribut']['type'] == 'checkbox') {
             
                     }elseif($value['atribut']['type'] == 'dropdown'){
                         $options = $value['data']['options']; 
-                        $input = form_dropdown($value['atribut']['name'], $options, null, $value['atribut']);
+                        $value['atribut']['class'] = 'selectpicker';
+						$name = $value['atribut']['name'];
+						unset($value['atribut']['name']);
+						$value['atribut']['data-style'] = 'select-with-transition btn-outline-selectpicker';
+                        $input = form_dropdown($name, $options, null, $value['atribut']);
                     }elseif($value['atribut']['type'] == 'hidden'){
                         $input = form_hidden($value['atribut']);
                     }
+
+					if(isset($name)){
+						$value['atribut']['name'] = $name;
+					}
                     $input .= '                                     @error(\''.$value['atribut']['name'].'\')<small class="text-danger">{{ $message }}</small>@enderror';
                     $modal .= '     '.$this->create_stacked_input($input, $label);
                 }else{
@@ -172,8 +195,9 @@
                             </div>
                             <div class="modal-footer">';
             $modal .= '         
-                                <button class="btn btn-primary" type="submit">Insert '.str_replace('_', ' ', $this->to_singular($this->table)).'</button>
-                            </div>';
+                                <button class="btn btn-primary" type="submit">Edit '.str_replace('_', ' ', $this->to_singular($this->table)).'</button>
+								<button class="btn btn-outline-default" data-dismiss="modal">Tutup</button>
+							</div>';
             $modal .= "
                         </form>";
             $modal .= '
@@ -203,11 +227,11 @@
             );
             
             $this->form = NULL;
-            $this->form .= '<form method="POST" novalidate="novalidate" id="formInsert'.$this->to_camel_case($this->table).'" action="{{ route(\''.$this->controller.'.store\') }} ">
+            $this->form .= '<form method="POST" novalidate="novalidate" id="formInsert'.$this->to_camel_case($this->table).'" action="{{ route(\''.$this->to_hypens($this->to_singular($this->table)).'.store\') }} ">
                             @csrf';
             
             foreach ($this->form_config as $key => $value) {
-                if(strpos($value['atribut']['name'], 'id_'.$this->table) === FALSE){
+                if(strpos($value['atribut']['name'], 'id') === FALSE){
                     $label = form_label($this->create_label_from_name($value['atribut']['name']), $value['atribut']['id']);
                     if($value['atribut']['type'] == 'text' || 
                        $value['atribut']['type'] == 'number' ||  
@@ -239,23 +263,121 @@
             
                     }elseif($value['atribut']['type'] == 'dropdown'){
                         $options = $value['data']['options'];
-                        $value['atribut']['class'] = 'selectpicker w-100';
-                        $value['atribut']['data-style'] = 'select-with-transition';
-
-                        $input = form_dropdown($value['atribut']['name'], $options, null, $value['atribut']);
+						$name = $value['atribut']['name'];
+                        $value['atribut']['class'] = 'selectpicker';
+						unset($value['atribut']['name']);
+						$value['atribut']['data-style'] = 'select-with-transition btn-outline-selectpicker';
+                        $input = form_dropdown($name, $options, null, $value['atribut']);
                     }elseif($value['atribut']['type'] == 'hidden'){
                         $input = form_hidden($value['atribut']);
                     }
+
+					if(isset($name)){
+						$value['atribut']['name'] = $name;
+					}
                     $input .= '                                     @error(\''.$value['atribut']['name'].'\')<small class="text-danger">{{ $message }}</small>@enderror';
                     $this->form .= $this->create_stacked_input($input, $label);
                 }
             }
             
             $this->form .= '    
-                            <button class="btn btn-primary" type="submit">Insert '.str_replace('_', ' ', $this->to_singular($this->table)).'</button>';
+                            <button class="btn btn-primary" type="submit">Tambah '.str_replace('_', ' ', $this->to_singular($this->table)).'</button>';
             $this->form .= "
                         </form>";
             return $this->form;
+        }
+
+        
+        public function generate_insert_modal(){
+            $this->set_form_config('insert');
+
+            $modal ='
+			<button type="button" class="btn btn-outline-primary mb-4 mt-0" data-toggle="modal" data-target="#modalInsert'.$this->to_camel_case($this->to_singular($this->table)).'">
+			Tambah '.ucwords(str_replace('_', ' ',$this->to_singular($this->table))).'
+			</button>
+            <div class="modal fade" id="modalInsert'.$this->to_camel_case($this->to_singular($this->table)).'" tabindex="-1" role="dialog" aria-labelledby="modelTitleId" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">';
+
+            
+            $modal .= '
+                        <form method="POST" novalidate="novalidate" id="formInsert'.$this->to_camel_case($this->to_singular($this->table)).'" action="{{ route(\''.$this->to_hypens($this->to_singular($this->table)).'.store\') }} ">
+                                @csrf
+                                @method(\'POST\')';
+
+            $modal .= '
+                            <div class="modal-header">
+                                <h5 class="modal-title">Tambah '.ucwords(str_replace('_', ' ',$this->to_singular($this->table))).'</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">';
+
+            foreach ($this->form_config as $key => $value) {
+                if(strpos($value['atribut']['name'], 'id') === FALSE){
+                    $label = form_label(ucwords(str_replace('_', ' ', $this->create_label_from_name($value['atribut']['name']))), $value['atribut']['id']);
+                    if($value['atribut']['type'] == 'text' || 
+                       $value['atribut']['type'] == 'number' ||  
+                       $value['atribut']['type'] == 'date'){
+                        $input = form_input($value['atribut']);
+                    }elseif ($value['atribut']['type'] == 'textarea') {
+                        $input =  htmlspecialchars(form_textarea($value['atribut']));
+                        $input .= '
+                                    <div class="fileinput fileinput-new text-center d-block" data-provides="fileinput">
+                                        <div class="fileinput-new thumbnail">
+                                            <img src="{{ asset(\'material\') }}/img/image_placeholder.jpg" alt="...">
+                                        </div>
+                                        <div class="fileinput-preview fileinput-exists thumbnail"></div>
+                                        <div>
+                                            <span class="btn btn-primary btn-link  btn-file">
+                                                <span class="fileinput-new">Pilih Gambar</span>
+                                                <span class="fileinput-exists">Ganti</span>
+                                                <input type="file" name="'.$value['atribut']['name'].'" maxsize="2" extension="jpg|gif|png|jpeg">
+                                            </span>
+                                            <a  class="btn btn-danger btn-link fileinput-exists" data-dismiss="fileinput"><i class="fa fa-times"></i> Remove</a>
+                                        </div>
+                                    </div>
+                        ';
+                    }elseif ($value['atribut']['type'] == 'checkbox') {
+            
+                    }elseif($value['atribut']['type'] == 'dropdown'){
+                            $value['atribut']['class'] = 'selectpicker';
+                            $options = $value['data']['options']; 
+                            $name = $value['atribut']['name'];
+                            unset($value['atribut']['name']);
+                            $value['atribut']['data-style'] = 'select-with-transition btn-outline-selectpicker';
+                            $input = form_dropdown($name, $options, null, $value['atribut']);
+                    }elseif($value['atribut']['type'] == 'hidden'){
+                        $input = form_hidden($value['atribut']);
+                    }
+
+					if(isset($name)){
+						$value['atribut']['name'] = $name;
+					}
+                    $input .= '                                     @error(\''.$value['atribut']['name'].'\')<small class="text-danger">{{ $message }}</small>@enderror';
+                    $modal .= '     '.$this->create_stacked_input($input, $label);
+                }else{
+                    $modal .= form_hidden($value['atribut']['name'], $value['atribut']['value']);
+                }
+                
+            }
+            
+
+            $modal .= '     
+                            </div>
+                            <div class="modal-footer">';
+            $modal .= '         
+                                <button class="btn btn-primary" type="submit">Tambah '.str_replace('_', ' ', $this->to_singular($this->table)).'</button>
+								<button class="btn btn-outline-default" data-dismiss="modal">Tutup</button>
+                            </div>';
+            $modal .= "
+                        </form>";
+            $modal .= '
+                    </div>
+                </div>
+            </div>';
+            return $modal;
         }
 
         public function retreive_form_config(){
@@ -307,12 +429,14 @@
 
 
                 if(
-                    $value->primary_key == 0 &&
-                    strpos($value->name, 'id') === FALSE
+                    $value->primary_key == 0
                 ){
                     if($value->type == 'varchar'){
                         $atribut['type'] = 'text';
-                    }elseif ($value->type == 'int') {
+                    }elseif (
+                        $value->type == 'int' &&
+                        strpos($value->name, 'id') === FALSE
+                    ) {
                         $atribut['min'] = '0';
                         $atribut['type'] = 'number';
                     }elseif ($value->type == 'text') {
@@ -325,6 +449,14 @@
                     }elseif($value->type == 'enum'){
                         $atribut['type'] = 'dropdown';
                         $data['options'] = $this->get_possible_enum($this->table, $value->name);
+                        $this->form_config[$value->name]["data"] =  $data;
+                    }
+                    elseif (
+                        $value->type == 'int' &&
+                        strpos($value->name, '_id') === TRUE
+                    ){
+                        $atribut['type'] = 'dropdown';
+                        $data['options'] = [[]];
                         $this->form_config[$value->name]["data"] =  $data;
                     }else{
                         //untuk jenis kolom lain seperti timestamp
@@ -393,17 +525,18 @@
             $controller = $string_form_validation;
             
             $controller .= '
-                $'.$this->to_singular($this->table).' = new "'.ucwords($this->to_singular($this->table)).'([';
+                $'.$this->to_camel_case($this->to_singular($this->table)).' = new '.$this->to_camel_case($this->to_singular($this->table)).'([';
 
             $controller .= '    '.$this->generate_array_model();
             
 
             $controller .= '
-                ]);';
+                ]);
+                $'.$this->to_camel_case($this->to_singular($this->table)).'->save();';
             $controller .= '
-                '.ucwords($this->to_singular($this->table)).'::create($request->all());';
+                '.$this->to_camel_case($this->to_singular($this->table)).'::create($request->all());';
             $controller .= "
-                return redirect()->route('".$this->to_singular($this->table).".index')
+                return redirect()->back()
                 ->with('success', '".ucwords($this->to_singular($this->table))." created successfully');";
         
             return $controller;
@@ -412,8 +545,8 @@
         public function generate_delete_controller($form_validation = true, $array_model = true){
             
             return "
-                $".$this->to_singular($this->table)."->delete();
-                return redirect()->route('".$this->to_singular($this->table).".index')
+                $".$this->to_camel_case($this->to_singular($this->table), true)."->delete();
+                return redirect()->back()
                 ->with('success', '".$this->to_singular($this->table)." berhasil dihapus');
             
             ";
@@ -437,8 +570,8 @@
                 );';
             
             $controller .= "
-                $".$this->table."->update(\$newData);
-                return redirect()->route('".$this->to_singular($this->table).".index')
+                $".$this->to_camel_case($this->to_singular($this->table), true)."->update(\$newData);
+                return redirect()->back()
                 ->with('success', '".$this->table." berhasil diupdate');
                 ";
             return $controller;
@@ -446,17 +579,7 @@
 
         public function generate_get_specific_controller($array_model = true){
             $controller = '
-            public function get_specific_'.$this->table.'()
-            {
-                if($this->session->userdata(\''.$this->session_key.'\') == \''.$this->session_value.'\')
-                {   
-                    $result = $this->Base_model->get_specific(\''.$this->table.'\',  array(\''.$this->primary_key.'\'=> $this->uri->segment(3)));
-                    echo json_encode($result);
-                }else
-                {
-                    redirect(\'account\');
-                }
-            }
+				return response()->json($'.$this->to_camel_case($this->to_singular($this->table) , true).', 200);
             ';
             return $controller;
         }
@@ -503,7 +626,7 @@
                             <td>$label</td>";
             }
             $table .= "
-                            <td>Aksi</td>";
+                            <td></td>";
 
             $table .= '
                         </tr>
@@ -522,15 +645,16 @@
             $table .= '         
                                 <td>
                                     <form class="d-inline-block" 
-                                        action="{{ route(\''.$this->to_singular($this->table).'.destroy\', $'.$this->to_singular($this->table).'->'.$this->to_singular($this->table).'_id) }}" 
-                                        method="POST" onsubmit="delete'.$this->to_camel_case($this->table).'()">
+                                        action="{{ route(\''.$this->to_hypens($this->to_singular($this->table)).'.destroy\', $'.$this->to_singular($this->table).'->id) }}" 
+                                        method="POST">
                                         @csrf
                                         @method(\'DELETE\')
-                                        <button type="button" class="btn btn-link btn-danger  delete-form-'.$this->to_singular($this->table).'">Delete</button>
+                                        <button type="button" class="btn btn-link btn-danger  btn-delete-'.$this->to_singular($this->table).'">Delete</button>
                                     </form>
                                     <button class="btn btn-info btn-link btn-sm"  
-                                        onclick="openModal'.$this->to_camel_case($this->to_singular($this->table)).'(
-                                            \'{{ route(\''.$this->to_singular($this->table).'.destroy\', $'.$this->to_singular($this->table).'->'.$this->to_singular($this->table).'_id) }}\'
+                                        onclick="openModalEdit'.$this->to_camel_case($this->to_singular($this->table)).'(
+                                            \'{{ route(\''.$this->to_hypens($this->to_singular($this->table)).'.show\', $'.$this->to_singular($this->table).'->id) }}\',
+											\'{{ route(\''.$this->to_hypens($this->to_singular($this->table)).'.update\', $'.$this->to_singular($this->table).'->id) }}\'
                                         )"
                                     >
                                         Edit
@@ -565,19 +689,18 @@
                             [10, 25, 50, "All"]
                         ],
                         "columnDefs": [
-                            { "width": "10%", "targets": -1 }
-                        ],
-                        responsive: false
-                    });
+                            { "width": "10%", "targets": -1 },
+							{"width": "5%", "targets": 0}
+						],
+						responsive: true,
+						autoWidth: false
+					});
 
                     table'.$this->to_camel_case($this->table).'.on(\'order.dt search.dt\', function () {
                         table'.$this->to_camel_case($this->table).'.column(0, {search:\'applied\', order:\'applied\'}).nodes().each( function (cell, i) {
                             cell.innerHTML = i+1;
                         } );
                     } ).draw();
-
-                    $(\'#formInsert'.$this->to_camel_case($this->table).'\').validate();
-                    $(\'#formEdit'.$this->to_camel_case($this->table).'\').validate();
                 });
 
                 
@@ -600,16 +723,27 @@
                     })
                 });
 
-                function openModal'.$this->to_camel_case($this->to_singular($this->table)).'($url){
-                    $.getJSON($url,
+				
+				app.setFormValidation(\'#formInsert'.$this->to_camel_case($this->to_singular(($this->table), true)).'\');
+				
+				app.setFormValidation(\'#formEdit'.$this->to_camel_case($this->to_singular(($this->table), true)).'\');
+                function openModalEdit'.$this->to_camel_case($this->to_singular($this->table)).'($getUrl, $updateUrl){
+                    $.getJSON($getUrl,
                         function (data, textStatus, jqXHR) {
                             $(\'#formEdit'.$this->to_camel_case($this->to_singular($this->table)).' .form-group\').addClass(\'is-filled\');';
                             foreach ($this->form_config as $k => $v) {
                                 $column_name = $this->convert_input_name_to_column($v['atribut']['name']);
-                                $javascript .= '
-                            $(\'#formEdit'.$this->to_camel_case($this->to_singular($this->table)).' [name="'.$v['atribut']['name'].'"]\').val(data.'.$column_name.');';
+								if($v['atribut']['type'] != 'dropdown')
+								{
+										$javascript .= '
+									$(\'#formEdit'.$this->to_camel_case($this->to_singular($this->table)).' [name="'.$v['atribut']['name'].'"]\').val(data.'.$column_name.');';
+								}else{
+										$javascript .= '
+									$(\'#formEdit'.$this->to_camel_case($this->to_singular($this->table)).' [name="'.$v['atribut']['name'].'"]\').selectpicker(\'val\', data.'.$column_name.');';
+								}
                             }
             $javascript .= '
+				$(\'#formEdit'.$this->to_camel_case($this->to_singular($this->table)).'\').attr(\'action\', $updateUrl);
                             $(\'#modalEdit'.$this->to_camel_case($this->to_singular($this->table)).'\').modal(\'show\');
                         }
                     );  
@@ -619,10 +753,13 @@
             return $javascript;
         }
         
-        public function to_camel_case($string){
+        public function to_camel_case($string, $capitalizeFirstCharacter = false){
             $string = str_replace('_', ' ', $string);
             $string = ucwords($string);
             $string = str_replace(' ', '', $string);
+			if ($capitalizeFirstCharacter) {
+				$string =  lcfirst($string);
+			}
             return $string;
         }
 
@@ -645,9 +782,9 @@
         }
 
         public function to_singular($name){
-            if(substr($name, -2) == 'es')
+            if(substr($name, -3) == 'ies')
             {
-                return substr_replace($name, "", -2);
+                return substr_replace($name, "y", -3);
             }elseif(substr($name, -1) == 's')
             {
                 return substr_replace($name, "", -1);

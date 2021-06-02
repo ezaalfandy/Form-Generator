@@ -146,6 +146,11 @@
                     </a>
                   </li>
                   <li class="nav-item">
+                    <a class="nav-link" data-toggle="tab" href="#insertModal" role="tablist">
+                      Insert Modal
+                    </a>
+                  </li>
+                  <li class="nav-item">
                     <a class="nav-link" data-toggle="tab" href="#table" role="tablist">
                       Table
                     </a>
@@ -170,6 +175,14 @@
                       <?= $edit_modal?> 
                     </textarea>
                     <button class="btn btn-default" data-clipboard-target="#editModalCode">
+                        copy
+                    </button>
+                  </div>
+                  <div class="tab-pane" id="insertModal">
+                    <textarea  id="insertModalCode" cols="100" rows="10">
+                      <?= $insert_modal?> 
+                    </textarea>
+                    <button class="btn btn-default" data-clipboard-target="#insertModalCode">
                         copy
                     </button>
                   </div>
@@ -214,6 +227,11 @@
                     </a>
                   </li>
                   <li class="nav-item">
+                    <a class="nav-link" data-toggle="tab" href="#GetJsonController" role="tablist">
+                      getJson
+                    </a>
+                  </li>
+                  <li class="nav-item">
                     <a class="nav-link" data-toggle="tab" href="#UpdateController" role="tablist">
                       Update
                     </a>
@@ -243,6 +261,14 @@
                       <?= $view_controller?>
                     </textarea>
                     <button class="btn btn-default" data-clipboard-target="#ReadControllerCode">
+                        copy
+                    </button>
+                  </div>
+                  <div class="tab-pane" id="GetJsonController">
+                    <textarea  id="GetJsonControllerCode" cols="100" rows="10">
+                      <?= $get_specific_controller?>
+                    </textarea>
+                    <button class="btn btn-default" data-clipboard-target="#GetJsonControllerCode">
                         copy
                     </button>
                   </div>
