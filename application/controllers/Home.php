@@ -35,7 +35,7 @@ class Home extends CI_Controller {
 
 
         
-        $generator = $this->laravel_generator;
+        $generator = $this->ci_generator;
 
 		$generator->initialize($config);
         
@@ -54,7 +54,7 @@ class Home extends CI_Controller {
         
 
         $data['model'] = $generator->generate_array_model();
-        $data['table'] = $generator->generate_table(array(), TRUE);
+        $data['table'] = $generator->generate_table(array());
         $data['javascript'] = $generator->generate_javascript();
         $this->load->view('home', $data);
 		

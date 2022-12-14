@@ -109,6 +109,82 @@
             $this->session_value = $session_value;
         }
 
+        public function generate_insert_modal(){
+            $this->set_form_config('insert');
+
+            $form_atribut = array(
+                "novalidate" => "novalidate", 
+                "id" => 'formInsert'.$this->to_camel_case($this->table),
+                "action" => "<?= base_url('".$this->controller."/edit-".$this->to_hypens($this->table)."')?>",
+				"class" => "needs-validation"
+            );
+            
+
+            $modal ='
+			<button type="button" class="btn btn-outline-primary mb-4 mt-0" data-bs-toggle="modal" 
+				data-bs-target="#modalInsert'.$this->to_camel_case($this->table).'">
+				Tambah '.ucwords(str_replace('_', ' ',$this->to_singular($this->table))).'
+			</button>
+            <div class="modal fade" id="modalInsert'.$this->to_camel_case($this->table).'" tabindex="-1" role="dialog" aria-labelledby="modelTitleId" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">';
+
+            $modal .= form_open(" ", $form_atribut);
+
+            $modal .= '
+                        <div class="modal-header">
+                            <h5 class="modal-title">Tambah '.str_replace('_', ' ', $this->table).'</h5>
+                            <button type="button" class="btn btn-link m-0" data-bs-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">';
+
+            foreach ($this->form_config as $key => $value) {
+                if(strpos($value['atribut']['name'], 'id_'.$this->table) === FALSE){
+                    $label = form_label(ucwords(str_replace('_', ' ', $this->create_label_from_name($value['atribut']['name']))), $value['atribut']['id']);
+                    if($value['atribut']['type'] == 'text' || 
+                       $value['atribut']['type'] == 'number' ||  
+                       $value['atribut']['type'] == 'date'){
+                        $input = form_input($value['atribut']);
+                    }elseif ($value['atribut']['type'] == 'text') {
+                        $input = form_input($value['atribut']);
+                    }elseif ($value['atribut']['type'] == 'radio') {
+            
+                    }elseif ($value['atribut']['type'] == 'checkbox') {
+            
+                    }elseif($value['atribut']['type'] == 'dropdown'){
+                        $options = $value['data']['options']; 
+                        $input = form_dropdown($value['atribut']['name'], $options, null, $value['atribut']);
+                    }elseif($value['atribut']['type'] == 'hidden'){
+                        $input = form_hidden($value['atribut']);
+                    }
+                    $input .= '                    <small class="text-danger"><?= form_error(\''.$value['atribut']['name'].'\'); ?></small>';
+                    $modal .= $this->create_stacked_input($input, $label);
+                }else{
+                    $modal .= form_hidden($value['atribut']['name'], $value['atribut']['value']);
+                }
+                
+            }
+            
+
+            $modal .= '
+                        </div>
+                        <div class="modal-footer">
+							<button class="btn btn-outline-default mb-0 me-2" data-dismiss="modal">Tutup</button>
+							<button class="btn btn-primary m-0" type="submit">Tambah '.str_replace('_', ' ', $this->to_singular($this->table)).'</button>
+                        </div>
+                        ';
+
+            $modal .= form_close();
+
+            $modal .= '
+                    </div>
+                </div>
+            </div>';
+            return $modal;
+        }
+
         public function generate_edit_modal(){
             $this->set_form_config('edit');
 
@@ -230,57 +306,6 @@
             return $this->form;
         }
 
-        public function generate_laravel_form(array $new_form_config = array(), $form_type = 'stacked', $link = null){
-
-            $this->set_laravel_form_config('insert');
-            if($new_form_config == NULL){
-                //APABILA USER TIDAK MENSPESIFIKKAN FORM CONFIG MAKA AKAN MENGGUNAKAN CONFIG DEFAULT
-                if($this->form_config == null){
-                    //MELAKUKAN SET DEFAULT form_config
-                    $this->set_laravel_form_config();
-                }
-            }else{
-                $this->form_config = $new_form_config;
-            }
-
-            $form_atribut = array(
-                "novalidate" => "novalidate", 
-                "id" => 'formInsert'.$this->to_camel_case($this->table),
-                "action" => $this->controller."@store"
-            );
-            
-            $this->form = NULL;
-            $this->form .= '{{ Form::open(array("novalidate" => "novalidate", "id" => "formInsert'.$this->to_camel_case($this->table).'", "action" => "'.$this->controller.'Controller@store")) }}';
-            
-            foreach ($this->form_config as $key => $value) {
-                if(strpos($value['atribut']['name'], 'id_'.$this->table) === FALSE){
-                    $label = form_label($this->create_label_from_name($value['atribut']['name']), $value['atribut']['id']);
-                    if($value['atribut']['type'] == 'text' || 
-                       $value['atribut']['type'] == 'number' ||  
-                       $value['atribut']['type'] == 'date'){
-                        $input = form_input($value['atribut']);
-                    }elseif ($value['atribut']['type'] == 'text') {
-                        $input = form_input($value['atribut']);
-                    }elseif ($value['atribut']['type'] == 'radio') {
-            
-                    }elseif ($value['atribut']['type'] == 'checkbox') {
-            
-                    }elseif($value['atribut']['type'] == 'dropdown'){
-                        $options = $value['data']['options']; 
-                        $input = form_dropdown($value['atribut']['name'], $options, null, $value['atribut']);
-                    }elseif($value['atribut']['type'] == 'hidden'){
-                        $input = form_hidden($value['atribut']);
-                    }
-                    $input .= '                @error(\''.$value['atribut']['name'].'\')<small class="text-danger">{{ $message }}</small>@enderror';
-                    $this->form .= $this->create_stacked_input($input, $label);
-                }
-            }
-            
-            $this->form .= '<button class="btn btn-primary" type="submit">Insert '.str_replace('_', ' ', $this->table).'</button>';
-            $this->form .= "{{ Form::close() }}";
-            return $this->form;
-        }
-
         public function retreive_form_config(){
             return $this->form_config;
         }
@@ -300,9 +325,12 @@
 
         public function create_stacked_input($input, $label){
             $stacked_input = '
-                <div class="form-group">
+                <div class="mb-2">
                     '.$label.'
                     '.trim($input).'
+					<div class="invalid-feedback">
+						Wajib diisi
+					</div>
                 </div>
             ';
             return $stacked_input;
@@ -322,7 +350,7 @@
             foreach ($field_data as $key => $value) {
  
                 $atribut = array(
-                    'name'          => $prefix.'_'.$value->name,
+                    'name'          => $value->name,
                     'id'            => $prefix.'_'.$this->table.'_'.$value->name,
                     'class'         => 'form-control',
                     'value'         => '<?= (!empty($data_'.$this->table.'->'.$value->name.'))? $data_'.$this->table.'->'.$value->name.' : set_value(\''.$prefix.'_'.$value->name.'\'); ?>',
@@ -767,7 +795,7 @@
             if($laravel == FALSE)
             {
                 $table = '
-                <table class="table table-striped" id="table'.$this->to_camel_case($this->table).'">
+                <table class="table" id="tabel'.$this->to_camel_case($this->table).'">
                         <thead>
                             <tr>';
                     $table .= "
@@ -784,23 +812,23 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach($data_'.$this->table.' as $k_'.$this->table.' => $v_'.$this->table.'):?>
+                            <?php foreach($data_'.$this->table.' as '.$this->table.'):?>
                                 <tr>';
     
                     $table .= "
                                 <td></td>";
                 foreach ($this->form_config as $key => $value) {
                     $table .= '
-                                    <td><?= $v_'.$this->table.'->'.$this->convert_input_name_to_column($value['atribut']['name']).'?></td>';
+                                    <td><?= '.$this->table.'->'.$this->convert_input_name_to_column($value['atribut']['name']).'?></td>';
                 }
                 
                 $table .= '         <td>
-                                        <button class="btn btn-danger btn-sm" onclick="delete'.$this->to_camel_case($this->table).'(<?= $v_'.$this->table.'->id_'.$this->table.'?>)">
+                                        <button class="btn btn-danger btn-sm" onclick="delete'.$this->to_camel_case($this->table).'(<?= '.$this->table.'->id_'.$this->table.'?>)">
                                             <i class="material-icons"> 
                                             delete
                                             </i>
                                         </button>
-                                        <button class="btn btn-info btn-sm"  onclick="openModal'.$this->to_camel_case($this->table).'(<?= $v_'.$this->table.'->id_'.$this->table.'?>)">
+                                        <button class="btn btn-info btn-sm"  onclick="openModal'.$this->to_camel_case($this->table).'(<?= '.$this->table.'->id_'.$this->table.'?>)">
                                             <i class="material-icons"> 
                                             create
                                             </i>
@@ -817,7 +845,7 @@
             {
 
                 $table = '
-                <table class="table table-striped" id="table'.$this->to_camel_case($this->table).'">
+                <table class="table table-striped" id="tabel'.$this->to_camel_case($this->table).'">
                         <thead>
                             <tr>';
                     $table .= "
@@ -880,7 +908,7 @@
             $javascript = '
             <script>
                 $(document).ready(function () {
-                    var table'.$this->to_camel_case($this->table).' = $(\'#table'.$this->to_camel_case($this->table).'\').DataTable({
+                    var tabel'.$this->to_camel_case($this->table).' = $(\'#tabel'.$this->to_camel_case($this->table).'\').DataTable({
                         "pagingType": "full_numbers",
                         "lengthMenu": [
                             [10, 25, 50, -1],
@@ -892,8 +920,8 @@
                         responsive: false
                     });
 
-                    table'.$this->to_camel_case($this->table).'.on(\'order.dt search.dt\', function () {
-                        table'.$this->to_camel_case($this->table).'.column(0, {search:\'applied\', order:\'applied\'}).nodes().each( function (cell, i) {
+                    tabel'.$this->to_camel_case($this->table).'.on(\'order.dt search.dt\', function () {
+                        tabel'.$this->to_camel_case($this->table).'.column(0, {search:\'applied\', order:\'applied\'}).nodes().each( function (cell, i) {
                             cell.innerHTML = i+1;
                         } );
                     } ).draw();

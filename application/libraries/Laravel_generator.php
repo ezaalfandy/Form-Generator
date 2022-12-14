@@ -292,7 +292,7 @@
             $this->set_form_config('insert');
 
             $modal ='
-			<button type="button" class="btn btn-outline-primary mb-4 mt-0" data-toggle="modal" data-target="#modalInsert'.$this->to_camel_case($this->to_singular($this->table)).'">
+			<button type="button" class="btn btn-outline-primary mb-4 mt-0" data-bs-toggle="modal" data-bs-target="#modalInsert'.$this->to_camel_case($this->to_singular($this->table)).'">
 			Tambah '.ucwords(str_replace('_', ' ',$this->to_singular($this->table))).'
 			</button>
             <div class="modal fade" id="modalInsert'.$this->to_camel_case($this->to_singular($this->table)).'" tabindex="-1" role="dialog" aria-labelledby="modelTitleId" aria-hidden="true">
@@ -301,14 +301,14 @@
 
             
             $modal .= '
-                        <form method="POST" novalidate="novalidate" id="formInsert'.$this->to_camel_case($this->to_singular($this->table)).'" action="{{ route(\''.$this->to_hypens($this->to_singular($this->table)).'.store\') }} ">
+                        <form class="m-0" method="POST" novalidate="novalidate" id="formInsert'.$this->to_camel_case($this->to_singular($this->table)).'" action="{{ route(\''.$this->to_hypens($this->to_singular($this->table)).'.store\') }} ">
                                 @csrf
                                 @method(\'POST\')';
 
             $modal .= '
                             <div class="modal-header">
-                                <h5 class="modal-title">Tambah '.ucwords(str_replace('_', ' ',$this->to_singular($this->table))).'</h5>
-                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <h6 class="modal-title">Tambah '.ucwords(str_replace('_', ' ',$this->to_singular($this->table))).'</h6>
+                                <button type="button" class="btn btn-link px-2 m-0 text-lg" data-dismiss="modal" aria-label="Close">
                                     <span aria-hidden="true">&times;</span>
                                 </button>
                             </div>
@@ -368,8 +368,8 @@
                             </div>
                             <div class="modal-footer">';
             $modal .= '         
-                                <button class="btn btn-primary" type="submit">Tambah '.str_replace('_', ' ', $this->to_singular($this->table)).'</button>
-								<button class="btn btn-outline-default" data-dismiss="modal">Tutup</button>
+								<button class="btn btn-outline-default mb-0 me-2" data-dismiss="modal">Tutup</button>
+                                <button class="btn btn-primary m-0" type="submit">Tambah '.str_replace('_', ' ', $this->to_singular($this->table)).'</button>
                             </div>';
             $modal .= "
                         </form>";
@@ -399,7 +399,7 @@
 
         public function create_stacked_input($input, $label){
             $stacked_input = '
-                                <div class="form-group">
+                                <div class="mb-3">
                                     '.$label.'
                                     '.trim($input).'
                                 </div>';
@@ -615,7 +615,7 @@
 
 
             $table = '
-            <table class="table table-striped" id="table'.$this->to_camel_case($this->table).'">
+            <table class="table" id="table'.$this->to_camel_case($this->table).'">
                     <thead>
                         <tr>';
                 $table .= "
@@ -644,21 +644,26 @@
             
             $table .= '         
                                 <td>
-                                    <form class="d-inline-block" 
-                                        action="{{ route(\''.$this->to_hypens($this->to_singular($this->table)).'.destroy\', $'.$this->to_singular($this->table).'->id) }}" 
-                                        method="POST">
-                                        @csrf
-                                        @method(\'DELETE\')
-                                        <button type="button" class="btn btn-link btn-danger  btn-delete-'.$this->to_singular($this->table).'">Delete</button>
-                                    </form>
-                                    <button class="btn btn-info btn-link btn-sm"  
-                                        onclick="openModalEdit'.$this->to_camel_case($this->to_singular($this->table)).'(
-                                            \'{{ route(\''.$this->to_hypens($this->to_singular($this->table)).'.show\', $'.$this->to_singular($this->table).'->id) }}\',
-											\'{{ route(\''.$this->to_hypens($this->to_singular($this->table)).'.update\', $'.$this->to_singular($this->table).'->id) }}\'
-                                        )"
-                                    >
-                                        Edit
-                                    </button>
+									<div class="dropstart">
+										<button type="button" id="dropdown{{ $'.$this->to_singular($this->table).'->id}}" class="btn btn-default m-0 font-weight-normal shadow-none" data-bs-toggle="dropdown" aria-expanded="false">
+											<i class="fas fa-ellipsis-v"></i>
+										</button>
+										<ul class="dropdown-menu shadow-lg">
+											<li class="dropdown-item">
+												<a class="btn btn-default shadow-none m-0 w-100 text-start" href="{{ route(\''.$this->to_hypens($this->to_singular($this->table)).'.show\', $'.$this->to_singular($this->table).'->id) }}">Edit</a>
+											</li>
+											<li class="dropdown-item">
+												<form 
+													class="m-0 p-0"
+													action="{{ route(\''.$this->to_hypens($this->to_singular($this->table)).'.destroy\', $'.$this->to_singular($this->table).'->id) }}" 
+													method="POST">
+													@csrf
+													@method(\'DELETE\')
+													<button type="button" class="btn btn-default shadow-none m-0 w-100 text-start" onclick="confirm_submit(this, \'Data akan dihapus \')">Hapus</button>
+												</form>
+											</li>
+										</ul>
+									</div>
                                 </td>
                             </tr>
                         @endforeach
@@ -730,7 +735,7 @@
                 function openModalEdit'.$this->to_camel_case($this->to_singular($this->table)).'($getUrl, $updateUrl){
                     $.getJSON($getUrl,
                         function (data, textStatus, jqXHR) {
-                            $(\'#formEdit'.$this->to_camel_case($this->to_singular($this->table)).' .form-group\').addClass(\'is-filled\');';
+                            $(\'#formEdit'.$this->to_camel_case($this->to_singular($this->table)).' .mb-3\').addClass(\'is-filled\');';
                             foreach ($this->form_config as $k => $v) {
                                 $column_name = $this->convert_input_name_to_column($v['atribut']['name']);
 								if($v['atribut']['type'] != 'dropdown')
