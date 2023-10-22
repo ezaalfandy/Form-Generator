@@ -115,7 +115,7 @@
             $form_atribut = array(
                 "novalidate" => "novalidate", 
                 "id" => 'formInsert'.$this->to_camel_case($this->table),
-                "action" => "<?= base_url('".$this->controller."/edit-".$this->to_hypens($this->table)."')?>",
+                "action" => "<?= base_url('".$this->controller."/create')?>",
 				"class" => "needs-validation"
             );
             
@@ -191,7 +191,7 @@
             $form_atribut = array(
                 "novalidate" => "novalidate", 
                 "id" => 'formEdit'.$this->to_camel_case($this->table),
-                "action" => "<?= base_url('".$this->controller."/edit-".$this->to_hypens($this->table)."')?>"
+                "action" => "<?= base_url('".$this->controller."/update/$".$this->table."->id_'".$this->table.")?>"
             );
             
 
@@ -806,33 +806,37 @@
                                 <td>$label</td>";
                 }
                 $table .= "
-                                <td>Aksi</td>";
+                                <td></td>";
     
                 $table .= '
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach($data_'.$this->table.' as '.$this->table.'):?>
+                            <?php foreach($data_'.$this->table.' as $'.$this->table.'):?>
                                 <tr>';
     
                     $table .= "
                                 <td></td>";
                 foreach ($this->form_config as $key => $value) {
                     $table .= '
-                                    <td><?= '.$this->table.'->'.$this->convert_input_name_to_column($value['atribut']['name']).'?></td>';
+                                    <td><?= $'.$this->table.'->'.$this->convert_input_name_to_column($value['atribut']['name']).'?></td>';
                 }
                 
-                $table .= '         <td>
-                                        <button class="btn btn-danger btn-sm" onclick="delete'.$this->to_camel_case($this->table).'(<?= '.$this->table.'->id_'.$this->table.'?>)">
-                                            <i class="material-icons"> 
-                                            delete
-                                            </i>
-                                        </button>
-                                        <button class="btn btn-info btn-sm"  onclick="openModal'.$this->to_camel_case($this->table).'(<?= '.$this->table.'->id_'.$this->table.'?>)">
-                                            <i class="material-icons"> 
-                                            create
-                                            </i>
-                                        </button>
+                $table .= '         <td>                            <div class="dropstart">
+                            <button type="button" id="dropdown<?= $'.$this->table.'->id_'.$this->table.'?>" class="btn btn-default m-0 font-weight-normal shadow-none" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu shadow-lg">
+                                <li class="dropdown-item">
+                                    <a class="btn btn-default shadow-none m-0 w-100 text-start" href="<?= base_url('.$this->table.'/$'.$this->table.'->id_'.$this->table.') ?>">Edit</a>
+                                </li>
+                                <li class="dropdown-item">
+                                    <form action="<?= base_url('.$this->table.'/delete/$'.$this->table.'->id_'.$this->table.') ?>" method="post">
+                                        <button type="button" class="btn btn-default shadow-none m-0 w-100 text-start" onclick="confirm_submit(this, \'Data '.$this->table.'  akan dihapus ! \')">Hapus</button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
                                     </td>
                                 </tr>
                             <?php endforeach;?>
@@ -856,7 +860,7 @@
                                 <td>$label</td>";
                 }
                 $table .= "
-                                <td>Aksi</td>";
+                                <td></td>";
     
                 $table .= '
                             </tr>
@@ -930,40 +934,6 @@
                     $(\'#formEdit'.$this->to_camel_case($this->table).'\').validate();
                 });
 
-                function delete'.$this->to_camel_case($this->table).'($id_'.$this->table.'){
-                    swal({
-                        title: \'Apakah Anda Yakin ?\',
-                        text: "Data '.ucwords(str_replace('_', ' ', $this->table)).' akan dihapus dan tidak dapat dikembalikan !",
-                        type: \'warning\',
-                        showCancelButton: true,
-                        confirmButtonClass: \'btn btn-danger\',
-                        cancelButtonClass: \'btn btn-default btn-link\',
-                        confirmButtonText: \'Ya, Hapus\',
-                        buttonsStyling: false
-                    }).then(function(result) {
-                        if(result.value === true){
-                            window.location.href = "<?= base_url(\''.$this->controller.'/delete-'.$this->to_hypens($this->table).'/\')?>"+ $id_'.$this->table.';
-                        }
-                    })
-                }
-
-                function openModal'.$this->to_camel_case($this->table).'($id_'.$this->table.'){
-                    $.getJSON("<?= base_url(\''.$this->controller.'/get-specific-'.$this->to_hypens($this->table).'/\')?>"+$id_'.$this->table.',
-                        function (data, textStatus, jqXHR) {
-                                
-                            $(\'#formEdit'.$this->to_camel_case($this->table).' .form-group\').addClass(\'is-filled\');
-                            ';
-
-                            foreach ($this->form_config as $k => $v) {
-                                $column_name = $this->convert_input_name_to_column($v['atribut']['name']);
-                                $javascript .= '
-                                $(\'#formEdit'.$this->to_camel_case($this->table).' [name="'.$v['atribut']['name'].'"]\').val(data.'.$column_name.');';
-                            }
-            $javascript .= '
-                                $(\'#modalEdit'.$this->to_camel_case($this->table).'\').modal(\'show\');
-                        }
-                    );  
-                }
             </script>
             ';
             return $javascript;
@@ -1001,5 +971,3 @@
             }
         }
     }
-    
-?>
